@@ -11,10 +11,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Provide Email"],
       unique: true,
     },
-    password: {
-      type: String,
-      required: [true, "Provide Password"],
-    },
+
     password: {
       type: String,
       default: "",
@@ -37,7 +34,7 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Avtive", "Inactive", "Suspended"],
+      enum: ["Active", "Inactive", "Suspended"],
       default: "Active",
     },
     address_details: [
