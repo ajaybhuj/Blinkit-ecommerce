@@ -93,13 +93,13 @@ export async function verifyEmailController(req, res) {
 export async function loginController(req, res) {
   try {
     const { email, password } = req.body;
-    // if (!email || !password) {
-    //   return res.json({
-    //     message: "Please enter your email and password",
-    //     error: true,
-    //     success: false,
-    //   });
-    // }
+    if (!email || !password) {
+      return res.json({
+        message: "Please enter your email and password",
+        error: true,
+        success: false,
+      });
+    }
     const user = await UserModel.findOne({
       email,
     });
@@ -127,7 +127,53 @@ export async function loginController(req, res) {
       });
     }
     const accessToken = await generateAccessToken(user._id);
-    const refrehToken = await generateRefreshToken(user._id);
+    const refreshToken = await generateRefreshToken(user._id);
+    const cookiesOption = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+    res.cookie("accessToken", accessToken, cookiesOption);
+    res.cookie("refreshToken", refreshToken, cookiesOption);
+    return res.json({
+      message: "login success",
+      error: false,
+      success: true,
+      data: {
+        accessToken,
+        refreshToken,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}
+
+export async function logoutController(req, res) {
+  try {
+    const userId = req.userId;
+    const cookiesOption = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+    res.clearCookie("accessToken", cookiesOption);
+    res.clearCookie("refreshToken", cookiesOption);
+    const removeRefereshToken = await UserModel.findById(
+      { _id: userId },
+      {
+        refreshToken: "",
+      }
+    );
+    return res.json({
+      message: "Logout successful",
+      error: false,
+      success: true,
+    });
   } catch (error) {
     return res.status(500).json({
       message: error.message || error,
