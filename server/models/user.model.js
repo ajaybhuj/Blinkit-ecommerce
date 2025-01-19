@@ -11,7 +11,10 @@ const userSchema = new mongoose.Schema(
       required: [true, "Provide Email"],
       unique: true,
     },
-
+    avatar: {
+      type: String,
+      default: "",
+    },
     password: {
       type: String,
       default: "",

@@ -4,6 +4,7 @@ import bcryptjs from "bcryptjs";
 import verifyEmailTemplate from "../utils/verifyEmailTemplate.js";
 import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
+import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 export async function registerUserController(req, res) {
   try {
     const { name, email, password } = req.body;
@@ -179,6 +180,30 @@ export async function logoutController(req, res) {
       message: error.message || error,
       error: true,
       success: false,
+    });
+  }
+}
+
+export async function uploadAvatar(req, res) {
+  try {
+    const userId = req.userId;
+
+    const image = req.file;
+    const upload = await uploadImageCloudinary(image);
+
+    const updateUser = await UserModel.findByIdAndUpdate(userId, {
+      avatar: upload.url,
+    });
+
+    return res.json({
+      message: "Avatar uploaded successfully",
+      data: { _id: userId, avatar: upload.url },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message || error,
+      error: true,
+      success: true,
     });
   }
 }
