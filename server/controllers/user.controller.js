@@ -5,6 +5,7 @@ import verifyEmailTemplate from "../utils/verifyEmailTemplate.js";
 import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
+import generateOtp from "../utils/generateOtp.js";
 export async function registerUserController(req, res) {
   try {
     const { name, email, password } = req.body;
@@ -234,6 +235,135 @@ export async function updateUserDetails(req, res) {
     });
   } catch (error) {
     return res.status(400).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}
+
+export async function forgotPasswordController(req, res) {
+  try {
+    const { email } = req.body;
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "Email not found",
+        error: true,
+        success: false,
+      });
+    }
+    const otp = generateOtp();
+    const expireTime = new Date() + 60 * 60 * 1000;
+    const updateUser = await UserModel.findByIdAndUpdate(user._id, {
+      forgot_password_otp: otp,
+      forgot_password_expiry: new Date(expireTime).toISOString(),
+    });
+    await sendEmail({
+      sendTo: email,
+      subject: "Forgot Password OTP",
+      html: `<h1>Your OTP is ${otp}</h1>`,
+    });
+    return res.json({
+      message: "OTP sent to your email",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}
+
+export async function verifyForgotPasswordOtp(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Please provide email and otp",
+        error: true,
+        success: false,
+      });
+    }
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "Email not found",
+        error: true,
+        success: false,
+      });
+    }
+    const currentTime = new Date().toISOString();
+    if (user.forgot_password_expiry < currentTime) {
+      return res.status(400).json({
+        message: "OTP expired",
+        error: true,
+        success: false,
+      });
+    }
+    if (user.forgot_password_otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+        error: true,
+        success: false,
+      });
+    }
+
+    return res.json({
+      message: "OTP verified successfully",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "Please provide email, new password and confirm password",
+        error: true,
+        success: false,
+      });
+    }
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "email not found",
+        error: true,
+        success: false,
+      });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "password does not match",
+        error: true,
+        success: false,
+      });
+    }
+    const salt = await bcryptjs.genSalt(10);
+    const hashPassword = await bcryptjs.hash(newPassword, salt);
+    const update = await UserModel.findByIdAndUpdate(user._id, {
+      password: hashPassword,
+    });
+    return res.json({
+      message: "Password reset successfully",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
       message: error.message || error,
       error: true,
       success: false,
