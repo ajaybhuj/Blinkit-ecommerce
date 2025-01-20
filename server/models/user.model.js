@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Provide Email"],
       unique: true,
+      match: [/.+\@.+\..+/, "Please fill a valid email address"],
     },
     avatar: {
       type: String,
