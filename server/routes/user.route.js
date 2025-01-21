@@ -9,6 +9,7 @@ import {
   forgotPasswordController,
   verifyForgotPasswordOtp,
   resetPassword,
+  refreshTokenController,
 } from "../controllers/user.controller.js";
 import auth from "../middleware/auth.js";
 import upload from "../middleware/multer.js";
@@ -23,4 +24,5 @@ userRouter.put("/update-user", auth, updateUserDetails);
 userRouter.post("/forgot-password", forgotPasswordController);
 userRouter.put("/verify-forgot-password-otp", verifyForgotPasswordOtp);
 userRouter.put("/reset-password", resetPassword);
+userRouter.post("/refresh-token", refreshTokenController);
 export default userRouter;
